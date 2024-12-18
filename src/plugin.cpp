@@ -88,14 +88,14 @@ struct Hooks {
                 perkfactor = 1.0f;
                 RE::BGSEntryPoint::HandleEntryPoint(RE::PerkEntryPoint::kModCommandedActorLimit, summoner,
                                                     akCastedMagic, &perkfactor);
-                float perkfactorcapped = 0.0f;
-                RE::HandleEntryPoint(RE::PerkEntryPoint::kModSpellCost, summoner, &perkfactorcapped,
-                                     "VanillaCapped", 3,
-                                     {akCastedMagic});
-                if (perkfactor >= 1.0f && perkfactor + perkfactorcapped < 1.0f) {
-                
-                    perkfactor = 1.0f;
-                }
+                //float perkfactorcapped = 0.0f;
+                //RE::HandleEntryPoint(RE::PerkEntryPoint::kModSpellCost, summoner, &perkfactorcapped,
+                //                     "VanillaCapped", 3,
+                //                     {akCastedMagic});
+                //if (perkfactor >= 1.0f && perkfactor + perkfactorcapped < 1.0f) {
+                //
+                //    perkfactor = 1.0f;
+                //}
                 keywordmap["untyped"] = perkfactor;
                 for (auto& elements : commandedActorsEffectsArray) {
                     if (commandedActorsEffectsArray[j].activeEffect) {
