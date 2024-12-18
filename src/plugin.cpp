@@ -22,7 +22,7 @@ void SetupLog() {
 struct Hooks {
     struct CommandedActorLimitHook {
         static void thunk(RE::PerkEntryPoint entry_point, RE::Actor* target, RE::MagicItem* a_spell, void* out) {
-            logger::info("We in CommandedActorLimitHook func body");
+            //logger::info("We in CommandedActorLimitHook func body");
             float* floatPtr = static_cast<float*>(out);
             *floatPtr = 999.0f;  // If you need more than 999 summons, I think you've got a problem
 
@@ -34,56 +34,121 @@ struct Hooks {
         static void thunk(RE::AIProcess* test, RE::ActiveEffectReferenceEffectController* target2, void* target3) {
             func(test, target2, target3);
             auto a_AE = target2->effect;
+
+            logger::info("Commanded Actor effect was cast!");
+
+            bool casterIsPlayer = test->GetUserData()->IsPlayerRef();
+            logger::info("Caster was player: {}", casterIsPlayer ? "true" : "false");
+            
+            if (casterIsPlayer && a_AE->effect->baseEffect->HasKeywordString("MagicSummon_ED_Uncapped")) {
+                logger::info("Summon spell was cast by player and it had effect with MagicSummon_ED_Uncapped keyword, so doing nothing further");
+                return;
+            }
+
             std::vector<int> a_effectsToDeleteIndex;
             std::vector<int> a_activeSummonEffectsIndex;
             std::vector<int> a_activeSummonEffectsIndexSorted;
             std::vector<float> a_activeSummonEffectsDuration;
 
-            logger::info("We in CommandedActorHook func body");
+            //logger::info("We in CommandedActorHook func body");
 
             float perkfactor = 0.0f;
+            
             int j = 0;
-            //int reanimated = 0;
-            int accountedfor = 0;
+
             if (a_AE && test->middleHigh->perkData) {  
 
                 auto akCastedMagic = a_AE->spell;
-                RE::SummonCreatureEffect* summonedeffect;
-                RE::ReanimateEffect* reanimatedeffect;
-                RE::CommandEffect* commandedeffect;
                 auto commandedActorsEffectsArray = test->middleHigh->commandedActors;
                 auto summoner = test->GetUserData();
-                RE::Actor* summonedactor;
-                std::string_view soughtKeywordEditorIdPrefix;
-
-                if (a_AE->effect->baseEffect->HasArchetype(RE::EffectArchetypes::ArchetypeID::kSummonCreature)) {
-                    summonedeffect = reinterpret_cast<RE::SummonCreatureEffect*>(a_AE);
-                    if (summonedeffect) {
-                        soughtKeywordEditorIdPrefix = "MagicSummon";
-
-                        summonedactor = summonedeffect->commandedActor.get().get();
-                    }
-                } else if (a_AE->effect->baseEffect->HasArchetype(RE::EffectArchetypes::ArchetypeID::kReanimate)) {
-                    reanimatedeffect = reinterpret_cast<RE::ReanimateEffect*>(a_AE);
-                    if (reanimatedeffect) {
-                        soughtKeywordEditorIdPrefix = "MagicSummon";
-                        //reanimated = 1;
-                        summonedactor = reanimatedeffect->commandedActor.get().get();
-                    }
-                } else if (a_AE->effect->baseEffect->HasArchetype(
-                               RE::EffectArchetypes::ArchetypeID::kCommandSummoned)) {
-                    commandedeffect = reinterpret_cast<RE::CommandEffect*>(a_AE);
-                    if (commandedeffect) {
-                        soughtKeywordEditorIdPrefix = "MagicCommand";
-
-                        summonedactor = commandedeffect->commandedActor.get().get();
-                    }
-                }
-
-                std::unordered_map<std::string, float> keywordmap;
+                
+                // getting current command limit with respect to the relevant entry point
                 perkfactor = 1.0f;
                 RE::BGSEntryPoint::HandleEntryPoint(RE::PerkEntryPoint::kModCommandedActorLimit, summoner,
                                                     akCastedMagic, &perkfactor);
+
+                logger::info("Current command limit: {}", perkfactor);
+
+                // sorting active summon effects from newest to oldest
+                for (auto& elements : commandedActorsEffectsArray) {
+                    if (commandedActorsEffectsArray[j].activeEffect) {
+                        a_activeSummonEffectsIndex.push_back(j);
+                        a_activeSummonEffectsDuration.push_back(
+                            commandedActorsEffectsArray[j].activeEffect->elapsedSeconds);
+                    }
+                    j += 1;
+                }
+                for (std::uint32_t widx = 0; widx < a_activeSummonEffectsIndex.size(); ++widx) {
+                    auto maxtime =
+                        std::max_element(a_activeSummonEffectsDuration.begin(), a_activeSummonEffectsDuration.end());
+                    float maxvalue = *maxtime;
+                    auto iter = (std::find(a_activeSummonEffectsDuration.begin(), a_activeSummonEffectsDuration.end(),
+                                           maxvalue));
+                    auto index = std::distance(a_activeSummonEffectsDuration.begin(), iter);
+                    if (a_activeSummonEffectsIndexSorted.empty()) {
+                        a_activeSummonEffectsIndexSorted.push_back(a_activeSummonEffectsIndex[index]);
+                    } else {
+                        a_activeSummonEffectsIndexSorted.insert(a_activeSummonEffectsIndexSorted.begin(),
+                                                                a_activeSummonEffectsIndex[index]);
+                    }
+                    a_activeSummonEffectsDuration[index] = 0.0f;
+                }
+
+                // iterate over sorted active summon effects to determine which to dispel
+                for (std::uint32_t widx = 0; widx < a_activeSummonEffectsIndexSorted.size(); ++widx) {
+                    auto element = commandedActorsEffectsArray[a_activeSummonEffectsIndexSorted[widx]];
+
+                    if (!casterIsPlayer  || !element.activeEffect->effect->baseEffect->HasKeywordString(
+                            "MagicSummon_ED_Uncapped")) {
+                        if (perkfactor >= 1.0f) {
+                            // summon limit has space for this effect
+
+                            logger::info("Checking capped command spell, not reached limit yet");
+
+                            perkfactor -= 1.0f;
+                        } else {
+                            // summon limit is full, this spell and other
+
+                            logger::info("Checking capped command spell, limit has already been reached, will be dispelled");
+                            a_effectsToDeleteIndex.push_back(a_activeSummonEffectsIndexSorted[widx]);
+                        }
+                    }   
+                }
+
+                // dispel effects liable for dispel
+                if (a_effectsToDeleteIndex.size() > 0) {
+                    for (std::uint32_t widx = 0; widx < a_effectsToDeleteIndex.size(); ++widx) {
+                        commandedActorsEffectsArray[a_effectsToDeleteIndex[widx]].activeEffect->Dispel(true);
+                    }
+                }
+
+                //if (a_AE->effect->baseEffect->HasArchetype(RE::EffectArchetypes::ArchetypeID::kSummonCreature)) {
+                //    summonedeffect = reinterpret_cast<RE::SummonCreatureEffect*>(a_AE);
+                //    if (summonedeffect) {
+                //        soughtKeywordEditorIdPrefix = "MagicSummon";
+
+                //        summonedactor = summonedeffect->commandedActor.get().get();
+                //    }
+                //} else if (a_AE->effect->baseEffect->HasArchetype(RE::EffectArchetypes::ArchetypeID::kReanimate)) {
+                //    reanimatedeffect = reinterpret_cast<RE::ReanimateEffect*>(a_AE);
+                //    if (reanimatedeffect) {
+                //        soughtKeywordEditorIdPrefix = "MagicSummon";
+                //        //reanimated = 1;
+                //        summonedactor = reanimatedeffect->commandedActor.get().get();
+                //    }
+                //} else if (a_AE->effect->baseEffect->HasArchetype(
+                //               RE::EffectArchetypes::ArchetypeID::kCommandSummoned)) {
+                //    commandedeffect = reinterpret_cast<RE::CommandEffect*>(a_AE);
+                //    if (commandedeffect) {
+                //        soughtKeywordEditorIdPrefix = "MagicCommand";
+
+                //        summonedactor = commandedeffect->commandedActor.get().get();
+                //    }
+                //}
+
+                //std::unordered_map<std::string, float> keywordmap;
+
+                
                 //float perkfactorcapped = 0.0f;
                 //RE::HandleEntryPoint(RE::PerkEntryPoint::kModSpellCost, summoner, &perkfactorcapped,
                 //                     "VanillaCapped", 3,
@@ -92,90 +157,74 @@ struct Hooks {
                 //
                 //    perkfactor = 1.0f;
                 //}
-                keywordmap["untyped"] = perkfactor;
+                // 
+                //keywordmap["untyped"] = perkfactor;
                 
                 // ---------------------------------------------------
-                // sorting active summon effects from newest to oldest
-                for (auto& elements : commandedActorsEffectsArray) {
-                    if (commandedActorsEffectsArray[j].activeEffect) {
-                        a_activeSummonEffectsIndex.push_back(j);
-                        a_activeSummonEffectsDuration.push_back(commandedActorsEffectsArray[j].activeEffect->elapsedSeconds);
-                    }
-                    j += 1;
-                }
-                for (std::uint32_t widx = 0; widx < a_activeSummonEffectsIndex.size(); ++widx) {
-                        auto maxtime = std::max_element(a_activeSummonEffectsDuration.begin(), a_activeSummonEffectsDuration.end());
-                        float maxvalue = *maxtime;
-                        auto iter = (std::find(a_activeSummonEffectsDuration.begin(), a_activeSummonEffectsDuration.end(), maxvalue));
-                        auto index = std::distance(a_activeSummonEffectsDuration.begin(), iter);
-                        if (a_activeSummonEffectsIndexSorted.empty()) {
-                        a_activeSummonEffectsIndexSorted.push_back(a_activeSummonEffectsIndex[index]);
-                        } else {
-                        a_activeSummonEffectsIndexSorted.insert(a_activeSummonEffectsIndexSorted.begin(), a_activeSummonEffectsIndex[index]);
-                        }
-                        a_activeSummonEffectsDuration[index] = 0.0f;
-                }
+                
                 // ---------------------------------------------------
 
                 // ---------------------------------------------------
                 // accounting to determine if someone should get dispelled
-                for (std::uint32_t widx = 0; widx < a_activeSummonEffectsIndexSorted.size(); ++widx) {
-                        auto element = commandedActorsEffectsArray[a_activeSummonEffectsIndexSorted[widx]];
-                        accountedfor = 0;
-                        
-                        // iterating over keywords in search of special "Magic(Summon/Command)" keyword to determine the typed pool
-                        // by default vanilla summon spells have such keywords, but without PEPE perks their typed pools are 0
-                        for (std::uint32_t idx = 0; idx < element.activeEffect->effect->baseEffect->numKeywords;
-                             ++idx) {
-                            if (element.activeEffect->effect->baseEffect->keywords[idx]->formEditorID.contains(
-                                    soughtKeywordEditorIdPrefix)) {
-                                auto testkey =
-                                    element.activeEffect->effect->baseEffect->keywords[idx]->formEditorID.c_str();
+                //for (std::uint32_t widx = 0; widx < a_activeSummonEffectsIndexSorted.size(); ++widx) {
+                //        auto element = commandedActorsEffectsArray[a_activeSummonEffectsIndexSorted[widx]];
+                //        accountedfor = 0;
 
-                                // initializing pool limit for this specific keyword through PEPE perks
-                                // by default for vanilla summon spell this typed pool will be 0 because if no pepe perk present for summoner
-                                if (!keywordmap.contains(testkey)) {
+                //  
+                //        
+                //        // iterating over keywords in search of special "Magic(Summon/Command)" keyword to determine the typed pool
+                //        // by default vanilla summon spells have such keywords, but without PEPE perks their typed pools are 0
+                //        for (std::uint32_t idx = 0; idx < element.activeEffect->effect->baseEffect->numKeywords;
+                //             ++idx) {
+                //            if (element.activeEffect->effect->baseEffect->keywords[idx]->formEditorID.contains(
+                //                    soughtKeywordEditorIdPrefix)) {
+                //                auto testkey =
+                //                    element.activeEffect->effect->baseEffect->keywords[idx]->formEditorID.c_str();
 
-                                    perkfactor = 0.0f;
-                                    RE::HandleEntryPoint(RE::PerkEntryPoint::kModSpellCost, summoner, &perkfactor, element.activeEffect->effect->baseEffect->keywords[idx]->formEditorID.c_str(), 3, {element.activeEffect->spell});
-                                        keywordmap[testkey] = perkfactor;
-                                }
+                //                // initializing pool limit for this specific keyword through PEPE perks
+                //                // by default for vanilla summon spell this typed pool will be 0 because if no pepe perk present for summoner
+                //                if (!keywordmap.contains(testkey)) {
 
-                                // if not accountedfor and pool still has space then subtract 1 from pool and mark effect as accounted
-                                if (keywordmap[testkey] >= 1.0f && accountedfor == 0) {
+                //                    perkfactor = 0.0f;
+                //                    RE::HandleEntryPoint(RE::PerkEntryPoint::kModSpellCost, summoner, &perkfactor, element.activeEffect->effect->baseEffect->keywords[idx]->formEditorID.c_str(), 3, {element.activeEffect->spell});
+                //                        keywordmap[testkey] = perkfactor;
+                //                }
 
-                                        keywordmap[testkey] -= 1.0f;
-                                        accountedfor = 1;
-                                }
+                //                // if not accountedfor and pool still has space then subtract 1 from pool and mark effect as accounted
+                //                if (keywordmap[testkey] >= 1.0f && accountedfor == 0) {
 
-                            }
-                        }
+                //                        keywordmap[testkey] -= 1.0f;
+                //                        accountedfor = 1;
+                //                }
 
-                        // if effect has no "MagicSpecialConjuration" keyword and was not accounted for with typed keyword look for space in "vanilla"? pool
-                        if (!element.activeEffect->effect->baseEffect->HasKeywordString("MagicSpecialConjuration")) {
-                            if (keywordmap["untyped"] > 0.0f && accountedfor == 0) {
-                                keywordmap["untyped"] -= 1.0f;
-                                accountedfor = 1;
-                            }
+                //            }
+                //        }
 
-                        }
-                        
-                        // if effect didnt get accounted for then push it to dispel list
-                        if (accountedfor == 0) {
-                            a_effectsToDeleteIndex.push_back(a_activeSummonEffectsIndexSorted[widx]);
-                            // seems to be irrelevant as (n == 0) always + logic is complete without it 
-                            //if (widx == 0) n = 0;
-                        }
+                //        // if effect has no "MagicSpecialConjuration" keyword and was not accounted for with typed keyword look for space in "vanilla"? pool
+                //        if (!element.activeEffect->effect->baseEffect->HasKeywordString("MagicSpecialConjuration")) {
+                //            if (keywordmap["untyped"] > 0.0f && accountedfor == 0) {
+                //                keywordmap["untyped"] -= 1.0f;
+                //                accountedfor = 1;
+                //            }
 
-                }
+                //        }
+                //        
+                //        // if effect didnt get accounted for then push it to dispel list
+                //        if (accountedfor == 0) {
+                //            a_effectsToDeleteIndex.push_back(a_activeSummonEffectsIndexSorted[widx]);
+                //            // seems to be irrelevant as (n == 0) always + logic is complete without it 
+                //            //if (widx == 0) n = 0;
+                //        }
+
+                //}
 
                 // dispel effects liable for dispel
-                if (a_effectsToDeleteIndex.size() > 0) {
-                        for (std::uint32_t widx = 0; widx < a_effectsToDeleteIndex.size(); ++widx) {
+                //if (a_effectsToDeleteIndex.size() > 0) {
+                //        for (std::uint32_t widx = 0; widx < a_effectsToDeleteIndex.size(); ++widx) {
 
-                            commandedActorsEffectsArray[a_effectsToDeleteIndex[widx]].activeEffect->Dispel(true);
-                        }
-                }
+                //            commandedActorsEffectsArray[a_effectsToDeleteIndex[widx]].activeEffect->Dispel(true);
+                //        }
+                //}
 
                 // ???
                 //if (n == 0 && reanimated == 0) {
