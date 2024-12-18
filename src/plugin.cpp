@@ -275,17 +275,32 @@ struct Hooks {
 };
 
 
+void MessageListener(SKSE::MessagingInterface::Message* message) {
+    if (message->type == SKSE::MessagingInterface::kPostLoad) {
+
+        logger::info("All plugins have loaded, checking if SummonActorLimitOverhaul is present");
+        if (GetModuleHandle(L"SummonActorLimitOverhaul.dll") == nullptr) {
+            logger::info("No SummonActorLimitOverhaul detected, installing...");
+            Hooks::Install();
+            logger::info("SummonActorSeparateLimit was installed!");
+        } else {
+            logger::info("SummonActorLimitOverhaul detected, this plugin was not installed");
+        }
+
+    }
+}
+
 SKSEPluginLoad(const SKSE::LoadInterface* skse) {
     SKSE::Init(skse);
     SetupLog();
+    //skse->GetPluginInfo("");
+    SKSE::GetMessagingInterface()->RegisterListener(MessageListener);
+
     //SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message* message) {
     //    if (message->type == SKSE::MessagingInterface::kDataLoaded)
     //        
     //});
-
-    logger::info("SummonActorSeparateLimit is initialized!");
-   
-    Hooks::Install();
+    
     return true;
 }
 
