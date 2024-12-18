@@ -55,17 +55,14 @@ struct Hooks {
                 RE::SummonCreatureEffect* summonedeffect;
                 RE::ReanimateEffect* reanimatedeffect;
                 RE::CommandEffect* commandedeffect;
-                auto mid = test->middleHigh->commandedActors;
                 auto commandedActorsEffectsArray = test->middleHigh->commandedActors;
                 auto summoner = test->GetUserData();
                 RE::Actor* summonedactor;
-                std::string_view a_editorID;
                 std::string_view soughtKeywordEditorIdPrefix;
 
                 if (a_AE->effect->baseEffect->HasArchetype(RE::EffectArchetypes::ArchetypeID::kSummonCreature)) {
                     summonedeffect = reinterpret_cast<RE::SummonCreatureEffect*>(a_AE);
                     if (summonedeffect) {
-                        a_editorID = "MagicSummon";
                         soughtKeywordEditorIdPrefix = "MagicSummon";
 
                         summonedactor = summonedeffect->commandedActor.get().get();
@@ -73,7 +70,6 @@ struct Hooks {
                 } else if (a_AE->effect->baseEffect->HasArchetype(RE::EffectArchetypes::ArchetypeID::kReanimate)) {
                     reanimatedeffect = reinterpret_cast<RE::ReanimateEffect*>(a_AE);
                     if (reanimatedeffect) {
-                        a_editorID = "MagicSummon";
                         soughtKeywordEditorIdPrefix = "MagicSummon";
                         reanimated = 1;
                         summonedactor = reanimatedeffect->commandedActor.get().get();
@@ -82,7 +78,6 @@ struct Hooks {
                                RE::EffectArchetypes::ArchetypeID::kCommandSummoned)) {
                     commandedeffect = reinterpret_cast<RE::CommandEffect*>(a_AE);
                     if (commandedeffect) {
-                        a_editorID = "MagicCommand";
                         soughtKeywordEditorIdPrefix = "MagicCommand";
 
                         summonedactor = commandedeffect->commandedActor.get().get();
@@ -102,12 +97,9 @@ struct Hooks {
                     perkfactor = 1.0f;
                 }
                 keywordmap["untyped"] = perkfactor;
-                for (auto& elements : mid) {
-                    if (mid[j].activeEffect) {
                 for (auto& elements : commandedActorsEffectsArray) {
                     if (commandedActorsEffectsArray[j].activeEffect) {
                         indexarrayworking.push_back(j);
-                        indexarrayworkingfloat.push_back(mid[j].activeEffect->elapsedSeconds);
                         indexarrayworkingfloat.push_back(commandedActorsEffectsArray[j].activeEffect->elapsedSeconds);
                     }
                     j += 1;
@@ -125,13 +117,11 @@ struct Hooks {
                         indexarrayworkingfloat[index] = 0.0f;
                 }
                 for (std::uint32_t widx = 0; widx < indexarrayworking2.size(); ++widx) {
-                        auto element = mid[indexarrayworking2[widx]];
                         auto element = commandedActorsEffectsArray[indexarrayworking2[widx]];
                         accountedfor = 0;
                         for (std::uint32_t idx = 0; idx < element.activeEffect->effect->baseEffect->numKeywords;
                              ++idx) {
                             if (element.activeEffect->effect->baseEffect->keywords[idx]->formEditorID.contains(
-                                    a_editorID)) {
                                     soughtKeywordEditorIdPrefix)) {
                                 auto testkey =
                                     element.activeEffect->effect->baseEffect->keywords[idx]->formEditorID.c_str();
@@ -169,7 +159,6 @@ struct Hooks {
                 if (indexarray.size() > 0) {
                         for (std::uint32_t widx = 0; widx < indexarray.size(); ++widx) {
 
-                            mid[indexarray[widx]].activeEffect->Dispel(true);
                             commandedActorsEffectsArray[indexarray[widx]].activeEffect->Dispel(true);
                         }
                 }
