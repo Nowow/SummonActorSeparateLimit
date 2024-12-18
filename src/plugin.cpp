@@ -1,10 +1,27 @@
 
 
 #include "include\PerkEntryPointExtenderAPI.h"
+#include <spdlog/sinks/basic_file_sink.h>
+
+namespace logger = SKSE::log;
+
+void SetupLog() {
+    auto logsFolder = SKSE::log::log_directory();
+    if (!logsFolder) SKSE::stl::report_and_fail("SKSE log_directory not provided, logs disabled.");
+    auto pluginName = SKSE::PluginDeclaration::GetSingleton()->GetName();
+    auto logFilePath = *logsFolder / std::format("{}.log", pluginName);
+    auto fileLoggerPtr = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath.string(), true);
+    auto loggerPtr = std::make_shared<spdlog::logger>("log", std::move(fileLoggerPtr));
+    spdlog::set_default_logger(std::move(loggerPtr));
+    spdlog::set_level(spdlog::level::trace);
+    spdlog::flush_on(spdlog::level::trace);
+}
+
 
 struct Hooks {
     struct CommandedActorLimitHook {
         static void thunk(RE::PerkEntryPoint entry_point, RE::Actor* target, RE::MagicItem* a_spell, void* out) {
+            logger::info("We in CommandedActorLimitHook func body");
             float* floatPtr = static_cast<float*>(out);
             *floatPtr = 999.0f;  // If you need more than 999 summons, I think you've got a problem
 
@@ -24,6 +41,8 @@ struct Hooks {
             std::vector<int> indexarrayworkinguntyped;
             std::vector<int> indexarrayworking2untyped;
             std::vector<float> indexarrayworkingfloatuntyped;
+
+            logger::info("We in CommandedActorHook func body");
 
             float perkfactor = 0.0f;
             int j = 0;
@@ -194,6 +213,7 @@ struct Hooks {
 
 SKSEPluginLoad(const SKSE::LoadInterface* skse) {
     SKSE::Init(skse);
+    SetupLog();
     Hooks::Install();
     return true;
 }
