@@ -97,6 +97,9 @@ struct Hooks {
                 //    perkfactor = 1.0f;
                 //}
                 keywordmap["untyped"] = perkfactor;
+                
+                // ---------------------------------------------------
+                // sorting active summon effects from newest to oldest
                 for (auto& elements : commandedActorsEffectsArray) {
                     if (commandedActorsEffectsArray[j].activeEffect) {
                         indexarrayworking.push_back(j);
@@ -116,22 +119,33 @@ struct Hooks {
                         }
                         indexarrayworkingfloat[index] = 0.0f;
                 }
+                // ---------------------------------------------------
+
+                // ---------------------------------------------------
+                // accounting to determine if someone should get dispelled
                 for (std::uint32_t widx = 0; widx < indexarrayworking2.size(); ++widx) {
                         auto element = commandedActorsEffectsArray[indexarrayworking2[widx]];
                         accountedfor = 0;
+                        
+                        // iterating over keywords in search of special "Magic(Summon/Command)" keyword to determine the typed pool
+                        // by default vanilla summon spells have such keywords, but without PEPE perks their typed pools are 0
                         for (std::uint32_t idx = 0; idx < element.activeEffect->effect->baseEffect->numKeywords;
                              ++idx) {
                             if (element.activeEffect->effect->baseEffect->keywords[idx]->formEditorID.contains(
                                     soughtKeywordEditorIdPrefix)) {
                                 auto testkey =
                                     element.activeEffect->effect->baseEffect->keywords[idx]->formEditorID.c_str();
+
+                                // initializing pool limit for this specific keyword through PEPE perks
+                                // by default for vanilla summon spell this typed pool will be 0 because if no pepe perk present for summoner
                                 if (!keywordmap.contains(testkey)) {
 
-                                        
                                     perkfactor = 0.0f;
                                     RE::HandleEntryPoint(RE::PerkEntryPoint::kModSpellCost, summoner, &perkfactor, element.activeEffect->effect->baseEffect->keywords[idx]->formEditorID.c_str(), 3, {element.activeEffect->spell});
                                         keywordmap[testkey] = perkfactor;
                                 }
+
+                                // if not accountedfor and pool still has space then subtract 1 from pool and mark effect as accounted
                                 if (keywordmap[testkey] >= 1.0f && accountedfor == 0) {
 
                                         keywordmap[testkey] -= 1.0f;
@@ -141,6 +155,7 @@ struct Hooks {
                             }
                         }
 
+                        // if effect has no "MagicSpecialConjuration" keyword and was not accounted for with typed keyword look for space in "vanilla"? pool
                         if (!element.activeEffect->effect->baseEffect->HasKeywordString("MagicSpecialConjuration")) {
                             if (keywordmap["untyped"] > 0.0f && accountedfor == 0) {
                                 keywordmap["untyped"] -= 1.0f;
@@ -148,14 +163,17 @@ struct Hooks {
                             }
 
                         }
-
+                        
+                        // if effect didnt get accounted for then push it to dispel list
                         if (accountedfor == 0) {
                             indexarray.push_back(indexarrayworking2[widx]);
+                            // seems to be irrelevant as (n == 0) always + logic is complete without it 
                             if (widx == 0) n = 0;
                         }
 
                 }
 
+                // dispel effects liable for dispel
                 if (indexarray.size() > 0) {
                         for (std::uint32_t widx = 0; widx < indexarray.size(); ++widx) {
 
@@ -163,6 +181,7 @@ struct Hooks {
                         }
                 }
 
+                // ???
                 if (n == 0 && reanimated == 0) {
                     std::vector<RE::SpellItem*> reanimateSpells;
 
