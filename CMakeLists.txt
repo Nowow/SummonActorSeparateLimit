@@ -35,7 +35,7 @@ if(DEFINED ENV{SKYRIM_MODS_FOLDER} AND IS_DIRECTORY "$ENV{SKYRIM_MODS_FOLDER}")
 endif()
 
 # Otherwise, you can set OUTPUT_FOLDER to any place you'd like :)
-# set(OUTPUT_FOLDER "C:/path/to/any/folder")
+set(OUTPUT_FOLDER "F:/ModOrganizer2/mods/Sacrosanct tweaks")
 
 set(headers
     src/include/PerkEntryPointExtenderAPI.h)
