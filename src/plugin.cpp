@@ -34,21 +34,16 @@ struct Hooks {
         static void thunk(RE::AIProcess* test, RE::ActiveEffectReferenceEffectController* target2, void* target3) {
             func(test, target2, target3);
             auto a_AE = target2->effect;
-            std::vector<int> indexarray;
-            std::vector<int> indexarrayuntyped;
-            std::vector<int> indexarrayworking;
-            std::vector<int> indexarrayworking2;
-            std::vector<float> indexarrayworkingfloat;
-            std::vector<int> indexarrayworkinguntyped;
-            std::vector<int> indexarrayworking2untyped;
-            std::vector<float> indexarrayworkingfloatuntyped;
+            std::vector<int> a_effectsToDeleteIndex;
+            std::vector<int> a_activeSummonEffectsIndex;
+            std::vector<int> a_activeSummonEffectsIndexSorted;
+            std::vector<float> a_activeSummonEffectsDuration;
 
             logger::info("We in CommandedActorHook func body");
 
             float perkfactor = 0.0f;
             int j = 0;
-            int n = 0;
-            int reanimated = 0;
+            //int reanimated = 0;
             int accountedfor = 0;
             if (a_AE && test->middleHigh->perkData) {  
 
@@ -72,7 +67,7 @@ struct Hooks {
                     reanimatedeffect = reinterpret_cast<RE::ReanimateEffect*>(a_AE);
                     if (reanimatedeffect) {
                         soughtKeywordEditorIdPrefix = "MagicSummon";
-                        reanimated = 1;
+                        //reanimated = 1;
                         summonedactor = reanimatedeffect->commandedActor.get().get();
                     }
                 } else if (a_AE->effect->baseEffect->HasArchetype(
@@ -103,29 +98,29 @@ struct Hooks {
                 // sorting active summon effects from newest to oldest
                 for (auto& elements : commandedActorsEffectsArray) {
                     if (commandedActorsEffectsArray[j].activeEffect) {
-                        indexarrayworking.push_back(j);
-                        indexarrayworkingfloat.push_back(commandedActorsEffectsArray[j].activeEffect->elapsedSeconds);
+                        a_activeSummonEffectsIndex.push_back(j);
+                        a_activeSummonEffectsDuration.push_back(commandedActorsEffectsArray[j].activeEffect->elapsedSeconds);
                     }
                     j += 1;
                 }
-                for (std::uint32_t widx = 0; widx < indexarrayworking.size(); ++widx) {
-                        auto maxtime = std::max_element(indexarrayworkingfloat.begin(), indexarrayworkingfloat.end());
+                for (std::uint32_t widx = 0; widx < a_activeSummonEffectsIndex.size(); ++widx) {
+                        auto maxtime = std::max_element(a_activeSummonEffectsDuration.begin(), a_activeSummonEffectsDuration.end());
                         float maxvalue = *maxtime;
-                        auto iter = (std::find(indexarrayworkingfloat.begin(), indexarrayworkingfloat.end(), maxvalue));
-                        auto index = std::distance(indexarrayworkingfloat.begin(), iter);
-                        if (indexarrayworking2.empty()) {
-                        indexarrayworking2.push_back(indexarrayworking[index]);
+                        auto iter = (std::find(a_activeSummonEffectsDuration.begin(), a_activeSummonEffectsDuration.end(), maxvalue));
+                        auto index = std::distance(a_activeSummonEffectsDuration.begin(), iter);
+                        if (a_activeSummonEffectsIndexSorted.empty()) {
+                        a_activeSummonEffectsIndexSorted.push_back(a_activeSummonEffectsIndex[index]);
                         } else {
-                        indexarrayworking2.insert(indexarrayworking2.begin(), indexarrayworking[index]);
+                        a_activeSummonEffectsIndexSorted.insert(a_activeSummonEffectsIndexSorted.begin(), a_activeSummonEffectsIndex[index]);
                         }
-                        indexarrayworkingfloat[index] = 0.0f;
+                        a_activeSummonEffectsDuration[index] = 0.0f;
                 }
                 // ---------------------------------------------------
 
                 // ---------------------------------------------------
                 // accounting to determine if someone should get dispelled
-                for (std::uint32_t widx = 0; widx < indexarrayworking2.size(); ++widx) {
-                        auto element = commandedActorsEffectsArray[indexarrayworking2[widx]];
+                for (std::uint32_t widx = 0; widx < a_activeSummonEffectsIndexSorted.size(); ++widx) {
+                        auto element = commandedActorsEffectsArray[a_activeSummonEffectsIndexSorted[widx]];
                         accountedfor = 0;
                         
                         // iterating over keywords in search of special "Magic(Summon/Command)" keyword to determine the typed pool
@@ -167,18 +162,18 @@ struct Hooks {
                         
                         // if effect didnt get accounted for then push it to dispel list
                         if (accountedfor == 0) {
-                            indexarray.push_back(indexarrayworking2[widx]);
+                            a_effectsToDeleteIndex.push_back(a_activeSummonEffectsIndexSorted[widx]);
                             // seems to be irrelevant as (n == 0) always + logic is complete without it 
-                            if (widx == 0) n = 0;
+                            //if (widx == 0) n = 0;
                         }
 
                 }
 
                 // dispel effects liable for dispel
-                if (indexarray.size() > 0) {
-                        for (std::uint32_t widx = 0; widx < indexarray.size(); ++widx) {
+                if (a_effectsToDeleteIndex.size() > 0) {
+                        for (std::uint32_t widx = 0; widx < a_effectsToDeleteIndex.size(); ++widx) {
 
-                            commandedActorsEffectsArray[indexarray[widx]].activeEffect->Dispel(true);
+                            commandedActorsEffectsArray[a_effectsToDeleteIndex[widx]].activeEffect->Dispel(true);
                         }
                 }
 
