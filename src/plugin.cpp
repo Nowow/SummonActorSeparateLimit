@@ -10,6 +10,7 @@ void SetupLog() {
     if (!logsFolder) SKSE::stl::report_and_fail("SKSE log_directory not provided, logs disabled.");
     auto pluginName = SKSE::PluginDeclaration::GetSingleton()->GetName();
     auto logFilePath = *logsFolder / std::format("{}.log", pluginName);
+    //RE::ConsoleLog::GetSingleton()->Print(logFilePath.string().c_str());
     auto fileLoggerPtr = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath.string(), true);
     auto loggerPtr = std::make_shared<spdlog::logger>("log", std::move(fileLoggerPtr));
     spdlog::set_default_logger(std::move(loggerPtr));
@@ -233,6 +234,13 @@ struct Hooks {
 SKSEPluginLoad(const SKSE::LoadInterface* skse) {
     SKSE::Init(skse);
     SetupLog();
+    //SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message* message) {
+    //    if (message->type == SKSE::MessagingInterface::kDataLoaded)
+    //        
+    //});
+
+    logger::info("SummonActorSeparateLimit is initialized!");
+   
     Hooks::Install();
     return true;
 }
