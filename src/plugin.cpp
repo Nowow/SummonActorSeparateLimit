@@ -182,37 +182,37 @@ struct Hooks {
                 }
 
                 // ???
-                if (n == 0 && reanimated == 0) {
-                    std::vector<RE::SpellItem*> reanimateSpells;
+                //if (n == 0 && reanimated == 0) {
+                //    std::vector<RE::SpellItem*> reanimateSpells;
 
-                    //RE::BGSEntryPoint::HandleEntryPoint(RE::PerkEntryPoint::kApplyReanimateSpell, summoner,
-                    //                                    akCastedMagic, summonedactor, &reanimateSpells); //This would be to use vanilla apply reanimate spell entry point
+                //    //RE::BGSEntryPoint::HandleEntryPoint(RE::PerkEntryPoint::kApplyReanimateSpell, summoner,
+                //    //                                    akCastedMagic, summonedactor, &reanimateSpells); //This would be to use vanilla apply reanimate spell entry point
 
-                     RE::HandleEntryPoint(RE::PerkEntryPoint::kApplyReanimateSpell, summoner,
-                                          &reanimateSpells, "SummonSpell", 3, {akCastedMagic, summonedactor});
-                    for (auto* reanimateSpell : reanimateSpells) {
-                        if (reanimateSpell->IsPermanent()) {
-                            summonedactor->AddSpell(reanimateSpell);
-                        } else {
-                            summoner->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant)
-                                ->CastSpellImmediate(reanimateSpell, false, summonedactor, 1.0F, false, 0.0F, nullptr);
-                        }
-                    }
-                    std::vector<RE::SpellItem*> selfreanimateSpells;
-                    RE::HandleEntryPoint(RE::PerkEntryPoint::kApplyReanimateSpell, summoner, &reanimateSpells,
-                                         "SummonSpell", 4, {akCastedMagic, summonedactor});
-                    for (auto* reanimateSpell : selfreanimateSpells) {
-                        if (reanimateSpell->IsPermanent()) {
-                            summoner->AddSpell(reanimateSpell);
-                        } else {
-                            summoner->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant)
-                                ->CastSpellImmediate(reanimateSpell, false, summoner, 1.0F, false, 0.0F, nullptr);
-                        }
-                    }
+                //     RE::HandleEntryPoint(RE::PerkEntryPoint::kApplyReanimateSpell, summoner,
+                //                          &reanimateSpells, "SummonSpell", 3, {akCastedMagic, summonedactor});
+                //    for (auto* reanimateSpell : reanimateSpells) {
+                //        if (reanimateSpell->IsPermanent()) {
+                //            summonedactor->AddSpell(reanimateSpell);
+                //        } else {
+                //            summoner->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant)
+                //                ->CastSpellImmediate(reanimateSpell, false, summonedactor, 1.0F, false, 0.0F, nullptr);
+                //        }
+                //    }
+                //    std::vector<RE::SpellItem*> selfreanimateSpells;
+                //    RE::HandleEntryPoint(RE::PerkEntryPoint::kApplyReanimateSpell, summoner, &reanimateSpells,
+                //                         "SummonSpell", 4, {akCastedMagic, summonedactor});
+                //    for (auto* reanimateSpell : selfreanimateSpells) {
+                //        if (reanimateSpell->IsPermanent()) {
+                //            summoner->AddSpell(reanimateSpell);
+                //        } else {
+                //            summoner->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant)
+                //                ->CastSpellImmediate(reanimateSpell, false, summoner, 1.0F, false, 0.0F, nullptr);
+                //        }
+                //    }
 
 
 
-                }
+                //}
             }
 
         }
