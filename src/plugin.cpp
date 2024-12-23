@@ -144,7 +144,7 @@ void MessageListener(SKSE::MessagingInterface::Message* message) {
         if (GetModuleHandle(L"SummonActorLimitOverhaul.dll") == nullptr) {
             logger::info("No SummonActorLimitOverhaul detected, installing hooks...");
             Hooks::Install();
-            logger::info("EverdamnedSupportPlugin was installed!");
+            logger::info("EverdamnedSupportPlugin hooks were installed!");
         } else {
             logger::info("SummonActorLimitOverhaul detected, plugin hooks were not installed");
         }
@@ -237,7 +237,6 @@ SKSEPluginLoad(const SKSE::LoadInterface* skse) {
     //    if (message->type == SKSE::MessagingInterface::kDataLoaded)
     //        
     //});
-    logger::info("EverdamnedSupportPlugin finished initializing!");
     return true;
 }
 
