@@ -220,12 +220,12 @@ SKSEPluginLoad(const SKSE::LoadInterface* skse) {
     //skse->GetPluginInfo("");
     SKSE::GetMessagingInterface()->RegisterListener(MessageListener);
     SKSE::GetPapyrusInterface()->Register(BindPapyrusFunctions);
+    
 
     //SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message* message) {
     //    if (message->type == SKSE::MessagingInterface::kDataLoaded)
     //        
     //});
-    
     logger::info("EverdamnedSupportPlugin finished initializing!");
     return true;
 }
