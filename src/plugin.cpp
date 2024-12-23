@@ -152,12 +152,21 @@ void MessageListener(SKSE::MessagingInterface::Message* message) {
     }
 }
 
-std::string MyNativeFunction(RE::StaticFunctionTag*) {
+std::string MyNativeFunction(RE::StaticFunctionTag*, int numba) {
+    logger::info("MyNativeFunction in C++ got called!, numba was: {}", numba);
     return "Hello from C++!";
 }
 
+std::string GetSpellAndReturnItsName(RE::StaticFunctionTag*, RE::SpellItem* theSpell) {
+    logger::info("The spell name: {}", theSpell->GetFullName());
+    return theSpell->GetFullName();
+}
+
+
 bool BindPapyrusFunctions(RE::BSScript::IVirtualMachine* vm) {
     vm->RegisterFunction("PapyrusNativeFunctionBinding", "ED_SKSEnativebindings", MyNativeFunction);
+    vm->RegisterFunction("GetProvidedSpellName", "ED_SKSEnativebindings", GetSpellAndReturnItsName);
+    //vm->RegisterFunction("GetEffectCaster", "ED_SKSEnativebindings", GetEffectAndReturnActor);
     logger::info("Papyrus functions bound!");
     return true;
 }
