@@ -152,21 +152,21 @@ void MessageListener(SKSE::MessagingInterface::Message* message) {
     }
 }
 
-std::string MyNativeFunction(RE::StaticFunctionTag*, int numba) {
-    logger::info("MyNativeFunction in C++ got called!, numba was: {}", numba);
-    return "Hello from C++!";
-}
-
-std::string GetSpellAndReturnItsName(RE::StaticFunctionTag*, RE::SpellItem* theSpell) {
-    logger::info("The spell name: {}", theSpell->GetFullName());
-    return theSpell->GetFullName();
-}
-
-RE::Actor* GetEffectAndReturnActor(RE::StaticFunctionTag*, RE::ActiveEffect* theEffect) {
-    logger::info("The effect name: {}", theEffect->effect->baseEffect->GetFullName());
-    logger::info("The effect caster name: {}", theEffect->caster.get().get()->GetName());
-    return theEffect->caster.get().get();
-}
+//std::string MyNativeFunction(RE::StaticFunctionTag*, int numba) {
+//    logger::info("MyNativeFunction in C++ got called!, numba was: {}", numba);
+//    return "Hello from C++!";
+//}
+//
+//std::string GetSpellAndReturnItsName(RE::StaticFunctionTag*, RE::SpellItem* theSpell) {
+//    logger::info("The spell name: {}", theSpell->GetFullName());
+//    return theSpell->GetFullName();
+//}
+//
+//RE::Actor* GetEffectAndReturnActor(RE::StaticFunctionTag*, RE::ActiveEffect* theEffect) {
+//    logger::info("The effect name: {}", theEffect->effect->baseEffect->GetFullName());
+//    logger::info("The effect caster name: {}", theEffect->caster.get().get()->GetName());
+//    return theEffect->caster.get().get();
+//}
 
 RE::Actor* GetActiveEffectCommandedActor(RE::StaticFunctionTag*, RE::ActiveEffect* theEffect) {
     //logger::info("The effect name: {}", theEffect->effect->baseEffect->GetFullName());
@@ -206,9 +206,9 @@ RE::Actor* GetActiveEffectCommandedActor(RE::StaticFunctionTag*, RE::ActiveEffec
 }
 
 bool BindPapyrusFunctions(RE::BSScript::IVirtualMachine* vm) {
-    vm->RegisterFunction("PapyrusNativeFunctionBinding", "ED_SKSEnativebindings", MyNativeFunction);
-    vm->RegisterFunction("GetProvidedSpellName", "ED_SKSEnativebindings", GetSpellAndReturnItsName);
-    vm->RegisterFunction("GetEffectCaster", "ED_SKSEnativebindings", GetEffectAndReturnActor);
+    //vm->RegisterFunction("PapyrusNativeFunctionBinding", "ED_SKSEnativebindings", MyNativeFunction);
+    //vm->RegisterFunction("GetProvidedSpellName", "ED_SKSEnativebindings", GetSpellAndReturnItsName);
+    //vm->RegisterFunction("GetEffectCaster", "ED_SKSEnativebindings", GetEffectAndReturnActor);
     vm->RegisterFunction("GetActiveEffectCommandedActor", "ED_SKSEnativebindings", GetActiveEffectCommandedActor);
     logger::info("Papyrus functions bound!");
     return true;
@@ -221,12 +221,12 @@ SKSEPluginLoad(const SKSE::LoadInterface* skse) {
     SKSE::GetMessagingInterface()->RegisterListener(MessageListener);
     SKSE::GetPapyrusInterface()->Register(BindPapyrusFunctions);
 
-
     //SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message* message) {
     //    if (message->type == SKSE::MessagingInterface::kDataLoaded)
     //        
     //});
     
+    logger::info("EverdamnedSupportPlugin finished initializing!");
     return true;
 }
 
