@@ -142,11 +142,11 @@ void MessageListener(SKSE::MessagingInterface::Message* message) {
 
         logger::info("All plugins have loaded, checking if SummonActorLimitOverhaul is present");
         if (GetModuleHandle(L"SummonActorLimitOverhaul.dll") == nullptr) {
-            logger::info("No SummonActorLimitOverhaul detected, installing...");
+            logger::info("No SummonActorLimitOverhaul detected, installing hooks...");
             Hooks::Install();
             logger::info("EverdamnedSupportPlugin was installed!");
         } else {
-            logger::info("SummonActorLimitOverhaul detected, this plugin was not installed");
+            logger::info("SummonActorLimitOverhaul detected, plugin hooks were not installed");
         }
 
     }
