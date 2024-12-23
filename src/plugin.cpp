@@ -1,6 +1,6 @@
 
 
-#include "include\PerkEntryPointExtenderAPI.h"
+//#include "include\PerkEntryPointExtenderAPI.h"
 #include <spdlog/sinks/basic_file_sink.h>
 
 namespace logger = SKSE::log;
@@ -21,7 +21,7 @@ void SetupLog() {
 
 struct Hooks {
     struct CommandedActorLimitHook {
-        static void thunk(RE::PerkEntryPoint entry_point, RE::Actor* target, RE::MagicItem* a_spell, void* out) {
+        static void thunk(RE::BGSPerkEntry::EntryPoint entry_point, RE::Actor* target, RE::MagicItem* a_spell, void* out) {
             //logger::info("We in CommandedActorLimitHook func body");
             float* floatPtr = static_cast<float*>(out);
             *floatPtr = 999.0f;  // If you need more than 999 summons, I think you've got a problem
@@ -64,7 +64,7 @@ struct Hooks {
                 
                 // getting current command limit with respect to the relevant entry point
                 perkfactor = 1.0f;
-                RE::BGSEntryPoint::HandleEntryPoint(RE::PerkEntryPoint::kModCommandedActorLimit, summoner,
+                RE::BGSEntryPoint::HandleEntryPoint(RE::BGSPerkEntry::EntryPoint::kModCommandedActorLimit, summoner,
                                                     akCastedMagic, &perkfactor);
 
                 logger::info("Current command limit: {}", perkfactor);
