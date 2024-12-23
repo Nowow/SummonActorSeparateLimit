@@ -162,11 +162,22 @@ std::string GetSpellAndReturnItsName(RE::StaticFunctionTag*, RE::SpellItem* theS
     return theSpell->GetFullName();
 }
 
+RE::Actor* GetEffectAndReturnActor(RE::StaticFunctionTag*, RE::ActiveEffect* theEffect) {
+    logger::info("The effect name: {}", theEffect->effect->baseEffect->GetFullName());
+    logger::info("The effect caster name: {}", theEffect->caster.get().get()->GetName());
+    return theEffect->caster.get().get();
+}
+
+//RE::Actor* CastCommandSpellFromSourceAndReturnActor(RE::StaticFunctionTag*, RE::ActiveEffect* theEffect) {
+//    logger::info("The effect name: {}", theEffect->effect->baseEffect->GetFullName());
+//    logger::info("The effect caster name: {}", theEffect->caster.get().get()->GetName());
+//    return theEffect->caster.get().get();
+//}
 
 bool BindPapyrusFunctions(RE::BSScript::IVirtualMachine* vm) {
     vm->RegisterFunction("PapyrusNativeFunctionBinding", "ED_SKSEnativebindings", MyNativeFunction);
     vm->RegisterFunction("GetProvidedSpellName", "ED_SKSEnativebindings", GetSpellAndReturnItsName);
-    //vm->RegisterFunction("GetEffectCaster", "ED_SKSEnativebindings", GetEffectAndReturnActor);
+    vm->RegisterFunction("GetEffectCaster", "ED_SKSEnativebindings", GetEffectAndReturnActor);
     logger::info("Papyrus functions bound!");
     return true;
 }
