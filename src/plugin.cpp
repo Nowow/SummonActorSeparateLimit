@@ -173,7 +173,7 @@ RE::Actor* GetActiveEffectCommandedActor(RE::StaticFunctionTag*, RE::ActiveEffec
     //logger::info("The effect caster name: {}", theEffect->caster.get().get()->GetName());
 
     if (theEffect) {
-        logger::info("GetActiveEffectCommandedActor got called and effect is not null!");
+        logger::debug("GetActiveEffectCommandedActor got called and effect is not null!");
         RE::SummonCreatureEffect* summonedeffect;
         RE::ReanimateEffect* reanimatedeffect;
         RE::CommandEffect* commandedeffect;
@@ -205,11 +205,22 @@ RE::Actor* GetActiveEffectCommandedActor(RE::StaticFunctionTag*, RE::ActiveEffec
     return nullptr;
 }
 
+void IncreaseActiveEffectDuration(RE::StaticFunctionTag*, RE::ActiveEffect* theEffect, float delta) {
+    if (theEffect) {
+        logger::debug("IncreaseActiveEffectDuration got called!");
+        logger::debug("Delta to increase duration by (only positive values): {}", abs(delta));
+        logger::debug("This effect's duration before increase: {}", theEffect->duration);
+        theEffect->duration += abs(delta);
+        logger::debug("This effect's duration after increase: {}", theEffect->duration);
+    }
+}
+
 bool BindPapyrusFunctions(RE::BSScript::IVirtualMachine* vm) {
     //vm->RegisterFunction("PapyrusNativeFunctionBinding", "ED_SKSEnativebindings", MyNativeFunction);
     //vm->RegisterFunction("GetProvidedSpellName", "ED_SKSEnativebindings", GetSpellAndReturnItsName);
     //vm->RegisterFunction("GetEffectCaster", "ED_SKSEnativebindings", GetEffectAndReturnActor);
     vm->RegisterFunction("GetActiveEffectCommandedActor", "ED_SKSEnativebindings", GetActiveEffectCommandedActor);
+    vm->RegisterFunction("IncreaseActiveEffectDuration", "ED_SKSEnativebindings", IncreaseActiveEffectDuration);
     logger::info("Papyrus functions bound!");
     return true;
 }
