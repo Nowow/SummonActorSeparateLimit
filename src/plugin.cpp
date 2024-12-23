@@ -152,11 +152,23 @@ void MessageListener(SKSE::MessagingInterface::Message* message) {
     }
 }
 
+std::string MyNativeFunction(RE::StaticFunctionTag*) {
+    return "Hello from C++!";
+}
+
+bool BindPapyrusFunctions(RE::BSScript::IVirtualMachine* vm) {
+    vm->RegisterFunction("PapyrusNativeFunctionBinding", "ED_SKSEnativebindings", MyNativeFunction);
+    logger::info("Papyrus functions bound!");
+    return true;
+}
+
 SKSEPluginLoad(const SKSE::LoadInterface* skse) {
     SKSE::Init(skse);
     SetupLog();
     //skse->GetPluginInfo("");
     SKSE::GetMessagingInterface()->RegisterListener(MessageListener);
+    SKSE::GetPapyrusInterface()->Register(BindPapyrusFunctions);
+
 
     //SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message* message) {
     //    if (message->type == SKSE::MessagingInterface::kDataLoaded)
