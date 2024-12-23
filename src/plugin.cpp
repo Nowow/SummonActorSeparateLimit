@@ -168,16 +168,48 @@ RE::Actor* GetEffectAndReturnActor(RE::StaticFunctionTag*, RE::ActiveEffect* the
     return theEffect->caster.get().get();
 }
 
-//RE::Actor* CastCommandSpellFromSourceAndReturnActor(RE::StaticFunctionTag*, RE::ActiveEffect* theEffect) {
-//    logger::info("The effect name: {}", theEffect->effect->baseEffect->GetFullName());
-//    logger::info("The effect caster name: {}", theEffect->caster.get().get()->GetName());
-//    return theEffect->caster.get().get();
-//}
+RE::Actor* GetActiveEffectCommandedActor(RE::StaticFunctionTag*, RE::ActiveEffect* theEffect) {
+    //logger::info("The effect name: {}", theEffect->effect->baseEffect->GetFullName());
+    //logger::info("The effect caster name: {}", theEffect->caster.get().get()->GetName());
+
+    if (theEffect) {
+        logger::info("GetActiveEffectCommandedActor got called and effect is not null!");
+        RE::SummonCreatureEffect* summonedeffect;
+        RE::ReanimateEffect* reanimatedeffect;
+        RE::CommandEffect* commandedeffect;
+        RE::Actor* summonedactor;
+
+        if (theEffect->effect->baseEffect->HasArchetype(RE::EffectArchetypes::ArchetypeID::kSummonCreature)) {
+            logger::debug("Control effect is of Summon type");
+            summonedeffect = reinterpret_cast<RE::SummonCreatureEffect*>(theEffect);
+            if (summonedeffect) {
+                summonedactor = summonedeffect->commandedActor.get().get();
+                return summonedactor;
+            }
+        } else if (theEffect->effect->baseEffect->HasArchetype(RE::EffectArchetypes::ArchetypeID::kReanimate)) {
+            logger::debug("Control effect is of reanimate type");
+            reanimatedeffect = reinterpret_cast<RE::ReanimateEffect*>(theEffect);
+            if (reanimatedeffect) {
+                summonedactor = reanimatedeffect->commandedActor.get().get();
+                return summonedactor;
+            }
+        } else if (theEffect->effect->baseEffect->HasArchetype(RE::EffectArchetypes::ArchetypeID::kCommandSummoned)) {
+            logger::debug("Control effect is of command type");
+            commandedeffect = reinterpret_cast<RE::CommandEffect*>(theEffect);
+            if (commandedeffect) {
+                summonedactor = commandedeffect->commandedActor.get().get();
+                return summonedactor;
+            }
+        }
+    }
+    return nullptr;
+}
 
 bool BindPapyrusFunctions(RE::BSScript::IVirtualMachine* vm) {
     vm->RegisterFunction("PapyrusNativeFunctionBinding", "ED_SKSEnativebindings", MyNativeFunction);
     vm->RegisterFunction("GetProvidedSpellName", "ED_SKSEnativebindings", GetSpellAndReturnItsName);
     vm->RegisterFunction("GetEffectCaster", "ED_SKSEnativebindings", GetEffectAndReturnActor);
+    vm->RegisterFunction("GetActiveEffectCommandedActor", "ED_SKSEnativebindings", GetActiveEffectCommandedActor);
     logger::info("Papyrus functions bound!");
     return true;
 }
